@@ -1,0 +1,122 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Panel Principal{% endblock %}
+
+{% block content %}
+
+<!-- SECCIÓN DE ANÁLISIS CON SCIKIT-LEARN -->
+
+<!-- PREDICCIÓN DE PRODUCTOS MÁS VENDIDOS -->
+<div class="flex flex-wrap justify-center gap-4 px-4 mt-10">
+    <div class="bg-white shadow-md rounded-xl p-4 w-full max-w-[1280px]">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">📈 Predicción de productos más vendidos</h2>
+
+        {% if predicciones %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for item in predicciones %}
+                    <div class="bg-blue-50 border border-blue-100 shadow rounded-2xl p-4 hover:shadow-md transition">
+                        <h3 class="text-base font-semibold text-blue-800 mb-2 text-center">{{ item.producto.nombre }}</h3>
+                        <p class="text-sm text-gray-700 text-center">
+                            🛒 Estimado: <span class="text-green-600 font-bold">{{ item.prediccion }}</span> unidades
+                        </p>
+                        <p class="text-xs text-gray-400 text-center mt-1">Basado en comportamiento mensual</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-sm text-center w-full">No hay suficientes datos para predecir ventas.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- PRODUCTOS CON BAJA ROTACIÓN -->
+<div class="flex flex-wrap justify-center gap-4 px-4 mt-10">
+    <div class="bg-white shadow-md rounded-xl p-4 w-[40rem]">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">🛑 Productos con baja rotación</h2>
+
+        {% if productos_outliers %}
+            <ul class="list-disc ml-6 text-sm text-red-700">
+                {% for producto in productos_outliers %}
+                    <li><strong>{{ producto.nombre }}</strong> — Stock: {{ producto.cantidad }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500 text-sm text-center">No se detectaron productos de baja rotación.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!--- RECOMENDACION DE PRODUCTOS -->
+<div class="flex flex-wrap justify-center gap-4 px-4 mt-10">
+    <div class="bg-white shadow-md rounded-xl p-4 w-[40rem]">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">📦 Recomendaciones de Reposición</h2>
+
+        {% if recomendaciones %}
+            <ul class="list-disc ml-6 text-sm text-blue-800">
+                {% for r in recomendaciones %}
+                    <li>
+                        <strong>{{ r.producto.nombre }}</strong> — Estimado: {{ r.estimado }} / Stock: {{ r.stock }} —
+                        <span class="text-red-600 font-semibold">Reponer: {{ r.reponer }} unidades</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500 text-sm text-center">No hay productos urgentes para reponer.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- CONTENEDOR DE GRÁFICOS -->
+<div class="flex flex-wrap justify-center gap-4 px-4 mt-10">
+
+    <!-- GRÁFICO DE STOCK -->
+    <div class="bg-white shadow-md rounded-xl p-4 w-[40rem]">
+        <h2 class="text-base font-semibold mb-3 text-gray-800 text-center">Stock</h2>
+        <div class="bg-gray-100 p-2 rounded-xl shadow-inner h-[260px]">
+            <canvas id="stockChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- GRÁFICO DE VENTAS -->
+    <div class="bg-white shadow-md rounded-xl p-4 w-[40rem]">
+        <h2 class="text-base font-semibold mb-3 text-gray-800 text-center">Ventas por Mes</h2>
+
+        <form method="get" class="mb-2 text-center">
+            <label for="mes" class="mr-2 font-medium text-gray-700 text-sm">Mes:</label>
+            <select name="mes" id="mes" onchange="this.form.submit()" class="px-2 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:ring focus:border-indigo-500">
+                {% for num, nombre in meses %}
+                    <option value="{{ num }}" {% if num == mes_actual %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <div class="bg-gray-100 p-2 rounded-xl shadow-inner h-[260px]">
+            <canvas id="ventasChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- GRÁFICO DE MENOS SALIDA -->
+    <div class="bg-white shadow-md rounded-xl p-4 w-[40rem]">
+        <h2 class="text-base font-semibold mb-3 text-gray-800 text-center">Menos Salida</h2>
+        <div class="bg-gray-100 p-2 rounded-xl shadow-inner h-[260px]">
+            <canvas id="productosMenosVendidosChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    window.nombresProductos = {{ nombres|safe }};
+    window.cantidadesStock = {{ cantidades|safe }};
+    window.diasVentas = {{ dias|safe }};
+    window.totalesVentas = {{ totales|safe }};
+    window.menosNombres = {{ menos_nombres|safe }};
+    window.menosCantidades = {{ menos_cantidades|safe }};
+</script>
+<script src="{% static 'core/js/dashboard_charts.js' %}"></script>
+
+{% endblock %}
